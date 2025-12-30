@@ -11,6 +11,8 @@ from .serializers import RegistrationSerializer
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
 
+    authentication_classes = []
+
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -31,6 +33,8 @@ class RegistrationView(APIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+
+    authentication_classes = []
 
     def post(self, request):
         user = authenticate(

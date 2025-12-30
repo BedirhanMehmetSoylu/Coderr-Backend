@@ -21,6 +21,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "password": {"write_only": True},
         }
 
+    def validate_username(self, value):
+        if " " in value:
+            raise serializers.ValidationError("Username cannot contain spaces.")
+        return value
+
     def validate(self, attrs):
         if attrs["password"] != attrs["repeated_password"]:
             raise serializers.ValidationError(
