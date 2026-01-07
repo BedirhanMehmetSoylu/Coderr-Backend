@@ -2,6 +2,12 @@ from django.conf import settings
 from django.db import models
 
 class UserProfile(models.Model):
+    """
+    Extends the base User model with additional profile information.
+
+    This model is used for both customer and business users.
+    The user type itself is stored on the User model (user.type).
+    """
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     file = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     first_name = models.CharField(max_length=50, blank=True, default='')
@@ -13,4 +19,5 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        """Readable representation used in admin and shell."""
         return self.user.username

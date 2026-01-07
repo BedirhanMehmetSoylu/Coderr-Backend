@@ -3,6 +3,13 @@ from django.conf import settings
 
 
 class Order(models.Model):
+    """
+    Represents a binding order created by a customer based on an OfferDetail.
+
+    An order connects a customer user with a business user and freezes
+    all relevant offer data (price, delivery time, revisions, features)
+    at the time of creation.
+    """
     STATUS_CHOICES = (
         ("in_progress", "In Progress"),
         ("completed", "Completed"),
@@ -38,4 +45,7 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        """
+        String representation used in Django admin and debugging.
+        """
         return f"Order #{self.id} - {self.title}"

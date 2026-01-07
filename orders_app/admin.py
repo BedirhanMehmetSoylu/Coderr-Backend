@@ -3,6 +3,9 @@ from .models import Order
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    """
+    Django admin configuration for Order model.
+    """
     list_display = (
         'id',
         'title',

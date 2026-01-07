@@ -3,6 +3,9 @@ from ..models import Offer, OfferDetail
 
 
 class OfferDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for OfferDetail model for read-only views.
+    """
     class Meta:
         model = OfferDetail
         fields = [
@@ -17,6 +20,9 @@ class OfferDetailSerializer(serializers.ModelSerializer):
 
 
 class OfferDetailCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating OfferDetail instances.
+    """
     class Meta:
         model = OfferDetail
         fields = [
@@ -30,6 +36,9 @@ class OfferDetailCreateSerializer(serializers.ModelSerializer):
 
 
 class OfferDetailUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating OfferDetail instances.
+    """
     class Meta:
         model = OfferDetail
         fields = [
@@ -43,6 +52,10 @@ class OfferDetailUpdateSerializer(serializers.ModelSerializer):
 
 
 class OfferListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing Offer instances including minimum price, delivery time, 
+    and user profile summary.
+    """
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
     details = serializers.SerializerMethodField()
@@ -65,18 +78,54 @@ class OfferListSerializer(serializers.ModelSerializer):
         ]
 
     def get_details(self, obj):
+        """
+        Return list of offer details with URL links.
+
+        Args:
+            obj (Offer): Offer instance
+
+        Returns:
+            list: List of dictionaries with detail id and URL
+        """
         return [
             {"id": detail.id, "url": f"/api/offerdetails/{detail.id}/"}
             for detail in obj.details.all()
         ]
 
     def get_min_price(self, obj):
+        """
+        Return the lowest price among all offer details.
+
+        Args:
+            obj (Offer)
+
+        Returns:
+            Decimal: Minimum price
+        """
         return obj.details.order_by("price").first().price
 
     def get_min_delivery_time(self, obj):
+        """
+        Return the shortest delivery time among all offer details.
+
+        Args:
+            obj (Offer)
+
+        Returns:
+            int: Minimum delivery time in days
+        """
         return obj.details.order_by("delivery_time_in_days").first().delivery_time_in_days
 
     def get_user_details(self, obj):
+        """
+        Return basic info of the user who created the offer.
+
+        Args:
+            obj (Offer)
+
+        Returns:
+            dict: User info with first_name, last_name, username
+        """
         profile = obj.user.profile
         return {
             "first_name": profile.first_name,
@@ -86,6 +135,11 @@ class OfferListSerializer(serializers.ModelSerializer):
     
 
 class OfferCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating Offer instances along with nested OfferDetails.
+
+    Validates that exactly 3 OfferDetails exist (Basic, Standard, Premium).
+    """
     details = OfferDetailCreateSerializer(many=True)
 
     class Meta:
@@ -94,6 +148,15 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ("user",)
 
     def validate_details(self, value):
+        """
+        Ensure exactly 3 details (basic, standard, premium) are provided.
+
+        Args:
+            value (list): List of detail dicts
+
+        Raises:
+            ValidationError: If not exactly 3 details
+        """
         if len(value) != 3:
             raise serializers.ValidationError(
                 "An offer must contain exactly 3 details."
@@ -101,6 +164,15 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        """
+        Create an Offer and associated OfferDetail entries.
+
+        Args:
+            validated_data (dict): Validated offer data
+
+        Returns:
+            Offer: Created offer instance
+        """
         details_data = validated_data.pop("details")
         
         user = self.context["request"].user
@@ -113,6 +185,9 @@ class OfferCreateSerializer(serializers.ModelSerializer):
     
 
 class OfferUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating Offer and optionally updating nested OfferDetails.
+    """
     details = OfferDetailUpdateSerializer(many=True, required=False)
 
     class Meta:
@@ -120,6 +195,16 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
         fields = ["title", "description", "image", "details"]
 
     def update(self, instance, validated_data):
+        """
+        Update the Offer instance and nested details if provided.
+
+        Args:
+            instance (Offer): Offer object to update
+            validated_data (dict): Validated data
+
+        Returns:
+            Offer: Updated offer
+        """
         details_data = validated_data.pop("details", None)
 
         for attr, value in validated_data.items():

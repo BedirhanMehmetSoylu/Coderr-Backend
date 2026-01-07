@@ -9,11 +9,25 @@ from .serializers import RegistrationSerializer
 
 
 class RegistrationView(APIView):
+    """
+    API endpoint for user registration.
+
+    Allows any user to create a new account.
+    """
     permission_classes = [AllowAny]
 
     authentication_classes = []
 
     def post(self, request):
+        """
+        Handle POST request to register a new user.
+
+        Args:
+            request (Request): DRF Request object containing user data.
+
+        Returns:
+            Response: Returns token, username, email, and user ID.
+        """
         serializer = RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -32,11 +46,25 @@ class RegistrationView(APIView):
 
 
 class LoginView(APIView):
-    permission_classes = [AllowAny]
+    """
+    API endpoint for user login.
 
+    Allows any user to authenticate using username and password.
+    """
+    permission_classes = [AllowAny]
     authentication_classes = []
 
     def post(self, request):
+        """
+        Handle POST request to authenticate a user.
+
+        Args:
+            request (Request): DRF Request object containing credentials.
+
+        Returns:
+            Response: Token and user info if authentication succeeds,
+                      otherwise 400 with error message.
+        """
         user = authenticate(
             username=request.data.get("username"),
             password=request.data.get("password"),

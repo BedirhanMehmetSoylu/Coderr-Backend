@@ -3,6 +3,9 @@ from .models import Review
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
+    """
+    Django admin configuration for Review model.
+    """
     list_display = (
         'id',
         'reviewer',

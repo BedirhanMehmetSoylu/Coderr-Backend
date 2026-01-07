@@ -3,6 +3,13 @@ from ..models import UserProfile
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Full profile serializer used for:
+    - retrieving a user's own profile
+    - updating a user's own profile
+
+    Includes user-related fields via serializer source mapping.
+    """
     first_name = serializers.CharField(default="", allow_blank=True)
     last_name = serializers.CharField(default="", allow_blank=True)
     location = serializers.CharField(default="", allow_blank=True)
@@ -32,12 +39,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_file(self, obj):
+        """
+        Returns the absolute URL of the profile image if present.
+        Returns an empty string otherwise to avoid null values in the frontend.
+        """
         if obj.file:
             return obj.file.url
         return ""
     
     
 class BusinessProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for public business profiles.
+
+    Used when listing business users.
+    Does NOT expose email for privacy reasons.
+    """
     first_name = serializers.CharField(default="", allow_blank=True)
     last_name = serializers.CharField(default="", allow_blank=True)
     location = serializers.CharField(default="", allow_blank=True)
@@ -64,12 +81,21 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_file(self, obj):
+        """
+        Returns the profile image URL if available.
+        """
         if obj.file:
             return obj.file.url
         return ""
 
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
+    """
+    Lightweight serializer for customer profiles.
+
+    Used for listing customers.
+    Only exposes minimal personal data.
+    """
     first_name = serializers.CharField(default="", allow_blank=True)
     last_name = serializers.CharField(default="", allow_blank=True)
     file = serializers.SerializerMethodField()
@@ -88,6 +114,10 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_file(self, obj):
+        """
+        Returns the absolute URL of the profile image if present.
+        Returns an empty string otherwise to avoid null values in the frontend.
+        """
         if obj.file:
             return obj.file.url
         return ""
