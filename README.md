@@ -34,16 +34,20 @@ git clone https://github.com/BedirhanMehmetSoylu/Coderr-Backend
 cd Coderr-Backend
 ```
 
-### 2. Create and activate a virtual environment
+### 2a. Create and activate a virtual environment on Windows
 
 ```bash
 python -m venv .venv
 
-# Linux/Mac
-source .venv/bin/activate
-
-# Windows
 .venv\Scripts\activate
+```
+
+### 2b. Create and activate a virtual environment on Linux/Mac
+
+```bash
+python -m venv .venv
+
+source .venv/bin/activate
 ```
 
 ### 3. Install Requirements
