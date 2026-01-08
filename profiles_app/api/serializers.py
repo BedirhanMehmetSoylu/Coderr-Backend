@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from ..models import UserProfile
+from django.db import transaction
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -19,7 +20,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
     username = serializers.CharField(source='user.username')
     email = serializers.CharField(source='user.email')
-    type = serializers.CharField(source='user.type')
+    type = serializers.CharField(source='user.type', read_only=True)
 
     class Meta:
         model = UserProfile
@@ -37,6 +38,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'email',
             'created_at'
         ]
+        read_only_fields = ['user', 'created_at']
 
     def get_file(self, obj):
         """
@@ -46,6 +48,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if obj.file:
             return obj.file.url
         return ""
+    
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """
+        Custom update to support:
+        - profile field updates
+        - user.email update in the same request
+        """
+        user_data = validated_data.pop("user", {})
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        email = user_data.get("email")
+        if email is not None:
+            instance.user.email = email
+            instance.user.save(update_fields=["email"])
+
+        return instance
     
     
 class BusinessProfileSerializer(serializers.ModelSerializer):

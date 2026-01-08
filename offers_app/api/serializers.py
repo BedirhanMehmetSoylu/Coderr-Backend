@@ -222,3 +222,130 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
                 detail.save()
 
         return instance
+    
+class OfferCreateResponseSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the response of a newly created Offer.
+
+    Returns the Offer along with its nested OfferDetails after creation.
+    This matches the API documentation for POST /api/offers/.
+
+    Attributes:
+        details (OfferDetailSerializer, many=True): Nested list of OfferDetail objects with full fields.
+    """
+    details = OfferDetailSerializer(many=True)
+
+    class Meta:
+        model = Offer
+        fields = [
+            "id",
+            "title",
+            "image",
+            "description",
+            "details",
+        ]
+
+
+class OfferRetrieveSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving a single Offer (GET /api/offers/{id}/).
+
+    Returns Offer fields along with nested details URLs, minimum price, and minimum delivery time.
+    Matches the API documentation for Offer retrieval.
+
+    Attributes:
+        details (SerializerMethodField): Returns a list of OfferDetail objects with 'id' and absolute 'url'.
+        min_price (SerializerMethodField): Returns the lowest price among all OfferDetails.
+        min_delivery_time (SerializerMethodField): Returns the shortest delivery time among all OfferDetails.
+    """
+    details = serializers.SerializerMethodField()
+    min_price = serializers.SerializerMethodField()
+    min_delivery_time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Offer
+        fields = [
+            "id",
+            "user",
+            "title",
+            "image",
+            "description",
+            "created_at",
+            "updated_at",
+            "details",
+            "min_price",
+            "min_delivery_time",
+        ]
+
+    def get_details(self, obj):
+        """
+        Build a list of OfferDetail URLs for the retrieved Offer.
+
+        Args:
+            obj (Offer): The Offer instance being serialized.
+
+        Returns:
+            list: Each item contains the 'id' and absolute 'url' of an OfferDetail.
+        """
+        request = self.context.get("request")
+
+        return [
+            {
+                "id": detail.id,
+                "url": request.build_absolute_uri(
+                    f"/api/offerdetails/{detail.id}/"
+                )
+                if request
+                else f"/api/offerdetails/{detail.id}/",
+            }
+            for detail in obj.details.all()
+        ]
+
+    def get_min_price(self, obj):
+        """
+        Returns the lowest price among all OfferDetails.
+
+        Args:
+            obj (Offer)
+
+        Returns:
+            Decimal: Minimum price, or None if no details exist.
+        """
+        detail = obj.details.order_by("price").first()
+        return detail.price if detail else None
+
+    def get_min_delivery_time(self, obj):
+        """
+        Returns the shortest delivery time among all OfferDetails.
+
+        Args:
+            obj (Offer)
+
+        Returns:
+            int: Minimum delivery time in days, or None if no details exist.
+        """
+        detail = obj.details.order_by("delivery_time_in_days").first()
+        return detail.delivery_time_in_days if detail else None
+
+
+class OfferPatchResponseSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the response after updating an Offer (PATCH /api/offers/{id}/).
+
+    Returns the Offer with all fields, including updated OfferDetails.
+    This matches the API documentation for PATCH response.
+
+    Attributes:
+        details (OfferDetailSerializer, many=True): Nested OfferDetail objects with full fields, including 'id'.
+    """
+    details = OfferDetailSerializer(many=True)
+
+    class Meta:
+        model = Offer
+        fields = [
+            "id",
+            "title",
+            "image",
+            "description",
+            "details",
+        ]

@@ -1,4 +1,5 @@
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 
@@ -7,6 +8,9 @@ from .serializers import (
     OfferCreateSerializer,
     OfferUpdateSerializer,
     OfferDetailSerializer,
+    OfferCreateResponseSerializer,
+    OfferRetrieveSerializer,
+    OfferPatchResponseSerializer
 )
 from .permissions import IsBusinessUser, IsOfferOwner
 from ..models import Offer, OfferDetail
@@ -63,6 +67,34 @@ class OfferListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return [IsAuthenticated(), IsBusinessUser()]
         return []
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new Offer with nested OfferDetails (POST /api/offers/).
+
+        Validates input, saves the Offer and its details, and returns
+        the created Offer serialized with OfferCreateResponseSerializer.
+
+        Args:
+            request (Request): DRF request with Offer data.
+            *args, **kwargs: Additional arguments.
+
+        Returns:
+            Response: Serialized Offer with nested details, status 201 Created.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        offer = serializer.save()
+
+        response_serializer = OfferCreateResponseSerializer(
+            offer,
+            context={"request": request}
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
 
     def get_queryset(self):
         """
@@ -125,7 +157,38 @@ class OfferDetailView(generics.RetrieveUpdateDestroyAPIView):
         """
         if self.request.method == "PATCH":
             return OfferUpdateSerializer
-        return OfferListSerializer
+        return OfferRetrieveSerializer
+    
+    def patch(self, request, *args, **kwargs):
+        """
+        Partially update an existing Offer and its nested OfferDetails (PATCH /api/offers/{id}/).
+
+        Validates and updates only the fields provided in the request, then
+        returns the updated Offer serialized with OfferPatchResponseSerializer.
+
+        Args:
+            request (Request): DRF request with fields to update.
+            *args, **kwargs: Additional positional and keyword arguments.
+
+        Returns:
+            Response: Serialized updated Offer with nested details, HTTP 200 OK.
+        """
+        offer = self.get_object()
+
+        serializer = OfferUpdateSerializer(
+            offer,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response_serializer = OfferPatchResponseSerializer(
+            offer,
+            context={"request": request},
+        )
+        return Response(response_serializer.data)
     
     
 class OfferDetailDetailView(generics.RetrieveAPIView):
