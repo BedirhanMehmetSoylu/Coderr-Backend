@@ -1,7 +1,7 @@
 from rest_framework import generics, filters, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import ValidationError
 
 from .serializers import (
     OfferListSerializer,
@@ -14,19 +14,7 @@ from .serializers import (
 )
 from .permissions import IsBusinessUser, IsOfferOwner
 from ..models import Offer, OfferDetail
-
-
-class OfferPagination(PageNumberPagination):
-    """
-    Custom pagination class for Offer listings.
-
-    Attributes:
-        page_size (int): Default number of offers per page.
-        page_size_query_param (str): Query param to override page size.
-    """
-    page_size = 10
-    page_size_query_param = "page_size"
-
+from .pagination import OfferPagination
 
 class OfferListCreateView(generics.ListCreateAPIView):
     """
@@ -118,12 +106,24 @@ class OfferListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(user_id=creator_id)
 
         if min_price:
-            queryset = queryset.filter(details__price__gte=min_price)
+            try:
+                min_price = float(min_price)
+                queryset = queryset.filter(details__price__gte=min_price)
+            except ValueError:
+                raise ValidationError(
+                    {"min_price": "min_price must be a number."}
+                )
 
         if max_delivery_time:
-            queryset = queryset.filter(
-                details__delivery_time_in_days__lte=max_delivery_time
-            )
+            try:
+                max_delivery_time = int(max_delivery_time)
+                queryset = queryset.filter(
+                    details__delivery_time_in_days__lte=max_delivery_time
+                )
+            except ValueError:
+                raise ValidationError(
+                    {"max_delivery_time": "max_delivery_time must be an integer."}
+                )
 
         return queryset.distinct()
     

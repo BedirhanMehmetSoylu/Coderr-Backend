@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from ..models import Offer, OfferDetail
 
 
@@ -215,13 +216,24 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
             for detail_data in details_data:
                 offer_type = detail_data.get("offer_type")
 
-                detail = instance.details.get(offer_type=offer_type)
+                if not offer_type:
+                    raise ValidationError({
+                        "details": "Each detail must include 'offer_type'."
+                    })
+
+                try:
+                    detail = instance.details.get(offer_type=offer_type)
+                except OfferDetail.DoesNotExist:
+                    raise ValidationError({
+                        "details": f"No OfferDetail found for offer_type '{offer_type}'."
+                    })
 
                 for attr, value in detail_data.items():
                     setattr(detail, attr, value)
                 detail.save()
 
         return instance
+
     
 class OfferCreateResponseSerializer(serializers.ModelSerializer):
     """

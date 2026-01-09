@@ -124,17 +124,12 @@ class OrderDetailView(generics.RetrieveUpdateDestroyAPIView):
         Any other payload structure results in a 400 Bad Request.
         """
         if set(request.data.keys()) != {"status"}:
-            raise ValidationError("Only status can be updated.")
+            raise ValidationError({"status": "Only status can be updated."})
 
-        if request.data["status"] not in [
-            "in_progress",
-            "completed",
-            "cancelled",
-        ]:
-            raise ValidationError("Invalid status value.")
+        if request.data["status"] not in ["in_progress", "completed", "cancelled"]:
+            raise ValidationError({"status": "Invalid status value."})
 
         return super().partial_update(request, *args, **kwargs)
-
 
 class OrderCountView(APIView):
     """
