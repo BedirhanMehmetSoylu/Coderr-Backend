@@ -110,4 +110,4 @@ yarn.lock
 *.key
 *.crt
 *.env
-*.secret
+*.secret.env
